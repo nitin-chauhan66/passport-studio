@@ -49,10 +49,10 @@ export default function App() {
       const blob = await response.blob();
 
       setProcessStatus('Removing background...');
-      
+
       // Run local WASM background removal
       const processedBlob = await removeBackground(blob);
-      
+
       const processedUrl = URL.createObjectURL(processedBlob);
       setProcessedImage(processedUrl);
       setProcessStatus('Complete!');
@@ -71,9 +71,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-      
+
       {/* --- CSS for Print Layout --- */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           @page { size: A4; margin: 10mm; }
           body { background: white; margin: 0; padding: 0; }
@@ -118,21 +119,21 @@ export default function App() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* Left Column: Controls */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-semibold mb-4">1. Upload & Process</h2>
-            
-            <div 
+
+            <div
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${sourceImage ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-blue-500 bg-gray-50'}`}
             >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept="image/png, image/jpeg, image/webp" 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/png, image/jpeg, image/webp"
+                className="hidden"
               />
               {sourceImage ? (
                 <div className="flex flex-col items-center text-green-700">
@@ -170,7 +171,7 @@ export default function App() {
 
             <div className="mt-8 border-t pt-6">
               <h2 className="text-xl font-semibold mb-4">2. Setup Output</h2>
-              
+
               <div className="space-y-5">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -186,8 +187,8 @@ export default function App() {
                         aria-label={`Select color ${color}`}
                       />
                     ))}
-                    <input 
-                      type="color" 
+                    <input
+                      type="color"
                       value={bgColor}
                       onChange={(e) => setBgColor(e.target.value)}
                       className="w-8 h-8 rounded cursor-pointer border-0 p-0"
@@ -199,11 +200,11 @@ export default function App() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Number of Copies (A4 Sheet): {copies}
                   </label>
-                  <input 
-                    type="range" 
-                    min="1" 
-                    max="35" 
-                    value={copies} 
+                  <input
+                    type="range"
+                    min="1"
+                    max="35"
+                    value={copies}
                     onChange={(e) => setCopies(parseInt(e.target.value))}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
@@ -225,25 +226,25 @@ export default function App() {
             <h2 className="text-xl font-semibold mb-4">Live Preview (35mm x 45mm)</h2>
             <div className="flex-1 bg-gray-100 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center p-8 overflow-hidden">
               {sourceImage ? (
-                <div 
+                <div
                   className="relative shadow-2xl transition-all duration-300"
-                  style={{ 
-                    width: '35mm', 
-                    height: '45mm', 
+                  style={{
+                    width: '35mm',
+                    height: '45mm',
                     backgroundColor: bgColor,
                     transform: 'scale(1.5)', // Scaled up just for visual preview on screen
                     transformOrigin: 'center'
                   }}
                 >
-                  <img 
-                    src={processedImage || sourceImage} 
-                    alt="Passport Preview" 
+                  <img
+                    src={processedImage || sourceImage}
+                    alt="Passport Preview"
                     className="w-full h-full object-cover"
                     style={{ objectPosition: 'center 15%' }} // Keeps face centered
                   />
                 </div>
               ) : (
-                <p className="text-gray-400 text-center">Upload an image to see<br/>the standard 3.5x4.5cm preview</p>
+                <p className="text-gray-400 text-center">Upload an image to see<br />the standard 3.5x4.5cm preview</p>
               )}
             </div>
           </div>
@@ -256,11 +257,11 @@ export default function App() {
         <div id="print-grid">
           {Array.from({ length: copies }).map((_, index) => (
             <div key={index} className="passport-box">
-               <img 
-                  src={processedImage || sourceImage} 
-                  alt="Passport" 
-                  className="passport-img"
-                />
+              <img
+                src={processedImage || sourceImage}
+                alt="Passport"
+                className="passport-img"
+              />
             </div>
           ))}
         </div>
