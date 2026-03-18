@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Printer, Image as ImageIcon, Loader2, Palette, AlertCircle, CheckCircle2 } from 'lucide-react';
-import removeBackground from '@imgly/background-removal';
+import {removeBackground} from '@imgly/background-removal';
 
 export default function App() {
   const [sourceImage, setSourceImage] = useState(null);
