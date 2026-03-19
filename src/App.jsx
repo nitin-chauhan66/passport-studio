@@ -795,7 +795,7 @@ ${Array.from({ length: copies }).map(() => `  <div class="photo"><img src="${src
         <header className="topbar">
           <div className="logo">
             <div className="logo-icon"><Camera style={{width:16,height:16,color:'white'}} /></div>
-            <span className="logo-text">PhotoPrint</span>
+            <span className="logo-text">Passport Studio</span>
           </div>
           <div className="steps">
             <Step number="1" label="Upload"       active={activeStep===1} done={activeStep>1} />
