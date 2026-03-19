@@ -417,6 +417,83 @@ export default function App() {
   const fileInputRef = useRef(null);
   const workingImage = croppedImage || sourceImage;
 
+  const handlePrint = useCallback(() => {
+    const src = compositeUrl || workingImage;
+    if (!src) return;
+
+    // A4 printable area: 210mm - 20mm margins = 190mm wide, 297mm - 20mm = 277mm tall
+    // Each photo: 35mm wide, 45mm tall, 5mm gap
+    // Columns: floor((190 + 5) / (35 + 5)) = floor(195/40) = 4 columns
+    // Rows per page: floor((277 + 5) / (45 + 5)) = floor(282/50) = 5 rows
+    // Max per page = 4 * 5 = 20
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  html, body {
+    width: 190mm;
+    background: white;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 35mm);
+    grid-auto-rows: 45mm;
+    gap: 5mm;
+    width: 190mm;
+    align-content: start;
+  }
+  .photo {
+    width: 35mm;
+    height: 45mm;
+    overflow: hidden;
+    border: 0.3mm solid #c0c0c0;
+    background: ${bgColor};
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 10%;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<div class="grid">
+${Array.from({ length: copies }).map(() => `  <div class="photo"><img src="${src}" /></div>`).join('\n')}
+</div>
+</body>
+</html>`;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open(); doc.write(html); doc.close();
+
+    // Wait for images to load before printing
+    const img = doc.querySelector('img');
+    const doPrint = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 200);
+    };
+    if (img) { img.onload = doPrint; img.onerror = doPrint; }
+    else { doPrint(); }
+  }, [compositeUrl, workingImage, copies, bgColor]);
+
   /* Step progression */
   useEffect(() => {
     if (sourceImage && activeStep < 2) setActiveStep(2);
@@ -710,20 +787,7 @@ export default function App() {
           padding:10px 13px;border:1px solid var(--border);
         }
 
-        /* Print */
-        @media print{
-          @page{size:A4;margin:10mm;}
-          body *{visibility:hidden;}
-          #print-area,#print-area *{visibility:visible;}
-          #print-area{
-            position:fixed;inset:0;
-            display:grid!important;
-            grid-template-columns:repeat(auto-fill,35mm);
-            gap:5mm;width:190mm;align-content:start;padding:0;
-          }
-          .pbox{width:35mm;height:45mm;border:.5px solid #ccc;overflow:hidden;}
-          .pbox img{width:100%;height:100%;object-fit:cover;object-position:center 10%;display:block;}
-        }
+        /* Print — handled via iframe, no @media print needed here */
       `}</style>
 
       <div className="app">
@@ -836,16 +900,16 @@ export default function App() {
                 <div>
                   <div className="slider-hdr">
                     <div className="setting-lbl" style={{margin:0}}><SlidersHorizontal style={{width:12,height:12}}/>Copies on A4</div>
-                    <div className="slider-val">{copies} photos</div>
+                    <div className="slider-val">{copies} / 20 photos</div>
                   </div>
-                  <input type="range" min="1" max="35" value={copies} onChange={e=>setCopies(+e.target.value)} />
-                  <div className="slider-hints"><span>1</span><span>A4 capacity: 35</span><span>35</span></div>
+                  <input type="range" min="1" max="20" value={copies} onChange={e=>setCopies(+e.target.value)} />
+                  <div className="slider-hints"><span>1</span><span>Max 20 per A4 page</span><span>20</span></div>
                   <div className="sheet-vis">
-                    {Array.from({length:35}).map((_,i) => (
+                    {Array.from({length:20}).map((_,i) => (
                       <div key={i} className="dot" style={{background:i<copies?'var(--accent)':'rgba(255,255,255,0.055)'}} />
                     ))}
                   </div>
-                  <div style={{fontSize:10.5,color:'var(--muted)',textAlign:'center',marginTop:6}}>Blue = photos · Grey = empty space</div>
+                  <div style={{fontSize:10.5,color:'var(--muted)',textAlign:'center',marginTop:6}}>Blue = photos · Grey = empty space · 4 columns × 5 rows</div>
                 </div>
               </div>
             </div>
@@ -893,13 +957,13 @@ export default function App() {
               <DownloadPanel compositeUrl={compositeUrl} bgColor={bgColor} />
 
               {/* Print */}
-              <button className="btn-print" onClick={() => window.print()} disabled={!workingImage}>
+              <button className="btn-print" onClick={handlePrint} disabled={!workingImage}>
                 <Printer style={{width:17,height:17}} />
                 Print A4 Sheet ({copies} photos)
               </button>
 
               <div className="tip-box">
-                <strong style={{color:'var(--text)'}}>Print tip:</strong> In the browser print dialog set <em>Scale → Actual size</em> and uncheck headers/footers for accurate 35×45 mm output.
+                <strong style={{color:'var(--text)'}}>Print tip:</strong> A dedicated print window opens automatically with a fixed 4-column A4 grid. Just hit <em>Print</em> — no scale adjustments needed. Disable browser headers/footers for the cleanest output.
               </div>
             </div>
           </div>
@@ -911,14 +975,6 @@ export default function App() {
         <CropModal imageUrl={sourceImage} onCrop={handleCropDone} onClose={() => setShowCrop(false)} />
       )}
 
-      {/* Print-only area */}
-      <div id="print-area" style={{display:'none'}}>
-        {Array.from({length:copies}).map((_,i) => (
-          <div key={i} className="pbox">
-            <img src={compositeUrl || workingImage || ''} alt="Passport" style={{backgroundColor:bgColor}} />
-          </div>
-        ))}
-      </div>
     </>
   );
 }
